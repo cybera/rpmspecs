@@ -4,17 +4,17 @@
 # DONE - each package has it's own requires
 
 Name:           vcl
-Version:        2.2.1  
-Release:        2%{?dist}
+Version:        2.3
+Release:        1%{?dist}
 Summary:        An open-source system used to dynamically provision and broker remote access to a dedicated compute environment for an end-user 
 
 Group:         Applications/System
 License:       Apache 2.0 
 URL:           https://cwiki.apache.org/VCL 
-Source0:       apache-VCL-%{version}-incubating.tar.bz2
-Patch0:       utils_virtual_undefined.patch
+Source0:       apache-VCL-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: 	mysql-server
+BuildArch:  noarch
 
 %package web
 Summary: VCL Web Interface
@@ -80,11 +80,7 @@ VCL Web GUI
 VCL Managment Node
 
 %prep
-%setup -n apache-VCL-%{version}-incubating
-pushd web/.ht-inc
-# patch does not like spaces in front of it!
-%patch0 -p0
-popd
+%setup -n apache-VCL-%{version}
 
 %build
 
@@ -94,16 +90,6 @@ mkdir -p $RPM_BUILD_ROOT/usr/share
 mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{name}-%{version}
 mkdir -p $RPM_BUILD_ROOT/etc/%{name}
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
-
-# These two VMWare modules are not supplied, as one would expect given how they are used 
-# in VCL, by VCL. But the rpmbuild process picks it up as a requirement.
-# It could be solved by simply adding it as a requirement during the install process like
-# other cpan modules, but right now the official install docs don't ask to install these
-# modules, so I'm guessing it's never used and am commenting them out. -- curtis
-pushd ./managementnode/lib/VCL/Module/Provisioning/VMware
-	sed -i 's|use VMware::Vix::Simple;|#use VMware::Vix::Simple;|' VIX_API.pm
-	sed -i 's|use VMware::Vix::API::Constants;|#use VMware::Vix::API::Constants;|' VIX_API.pm
-popd
 
 # We are installing vcld in a different location than /usr/local/vcl/bin so the init script
 # needs to be altered. -- curtis
@@ -143,6 +129,8 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/vcld
 
 %changelog
+* Thu Aug 02 2012 curtis@serverascode.com
+- bumping to v2.3...removing the patches, sed hacks, incubating...
 * Mon Jun 25 2012 curtis@serverascode.com
 - comment out VMware::Vix::Simple and VMware::Vix::API::Constants in VIX_API.pm because that library is not provided nor asked for in the official docs. 
 * Fri Jun 22 2012 curtis@serverascode.com
