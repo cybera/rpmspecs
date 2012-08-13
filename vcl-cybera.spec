@@ -3,10 +3,11 @@
 # - Example vcl.conf for apache?
 # DONE - each package has it's own requires
 
-Name:           vcl-cybera
-%define cybera_version 0.1
+Name:   vcl-cybera
+%define real_name vcl
+%define cybera_version 0.2
 Version:        2.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An open-source system used to dynamically provision and broker remote access to a dedicated compute environment for an end-user 
 
 Group:         Applications/System
@@ -14,9 +15,9 @@ License:       Apache 2.0
 URL:           https://cwiki.apache.org/VCL 
 #Source0:       apache-VCL-%{version}.tar.bz2
 
-%define git_repo https://github.com/cybera/VCL.git
+%define git_repo git@github.com:cybera/VCL.git
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRoot:      %{_tmppath}/%{real_name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: 	mysql-server
 BuildArch:  noarch
 
@@ -72,6 +73,8 @@ Requires: perl-RPC-XML
 Requires: perl-YAML
 Requires: xmlsec1-openssl
 Requires: perl-Object-InsideOut
+# Only in cybera version
+Requires: perl-Net-Amazon-EC2
 
 
 %description
@@ -85,21 +88,28 @@ VCL Managment Node
 
 %prep
 #%setup -n apache-VCL-%{version}
-rm -rf ./%{name}
-git clone %{git_repo}
-pushd %{name}
+rm -rf ./%{real_name}
+git clone %{git_repo} %{real_name}
+pushd %{real_name}
         # Note the v in front of version
         git checkout v%{cybera_version}
+        # Strip .svn
+        find . -name .svn -type d -print0 | xargs -0 rm -rf 
 popd
+
 
 %build
 
 %install
+cd vcl
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/usr/share
-mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{name}-%{version}
-mkdir -p $RPM_BUILD_ROOT/etc/%{name}
+mkdir -p $RPM_BUILD_ROOT/usr/share/%{real_name}
+mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{real_name}-%{version}
+mkdir -p $RPM_BUILD_ROOT/etc/%{real_name}
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
+
+# Drop into trunk now
+pushd trunk
 
 # We are installing vcld in a different location than /usr/local/vcl/bin so the init script
 # needs to be altered. -- curtis
@@ -110,38 +120,49 @@ popd
 #
 # Begin copying files..
 #
-cp -r ./mysql/* $RPM_BUILD_ROOT/usr/share/doc/%{name}-%{version}/
-cp -r ./web $RPM_BUILD_ROOT/usr/share/%{name}-web
+cp -r ./mysql/* $RPM_BUILD_ROOT/usr/share/doc/%{real_name}-%{version}/
+cp -r ./web $RPM_BUILD_ROOT/usr/share/%{real_name}-web
+# Themes is one level up from trunk
+cp -r ../themes/* $RPM_BUILD_ROOT/usr/share/%{real_name}-web/themes/
+cp -r ../sites $RPM_BUILD_ROOT/usr/share/%{real_name}-web/
+cp -r ../utils $RPM_BUILD_ROOT/usr/share/%{real_name}
+cp -r ../image-resources $RPM_BUILD_ROOT/usr/share/%{real_name}
 
 # Move the init file to the right spot
 mv ./managementnode/bin/S99vcld.linux $RPM_BUILD_ROOT/etc/init.d/vcld
 # Move vcld.conf to /etc/vcl...
-cp ./managementnode/etc/vcl/vcld.conf $RPM_BUILD_ROOT/etc/%{name}/
-# Keep the original vcld.conf file but rename it
+cp ./managementnode/etc/vcl/vcld.conf $RPM_BUILD_ROOT/etc/%{real_name}/
+# Keep the original vcld.conf file but rereal_name it
 mv ./managementnode/etc/vcl/vcld.conf ./managementnode/etc/vcl/vcld.conf.orig
+# Remove ec2 code for now
+# - it requires Amazon::EC2::Client for which there is no RPM that I know off
+#   and anyways it's not being used
+rm -rf ./managementnode/lib/VCL/Module/Provisioning/EC2
 # Now copy everything else
-cp -r ./managementnode $RPM_BUILD_ROOT/usr/share/%{name}-managementnode
+cp -r ./managementnode $RPM_BUILD_ROOT/usr/share/%{real_name}-managementnode
+# remove ec2 code
+
+popd #from trunk
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-/usr/share/doc/%{name}-%{version}
+/usr/share/doc/%{real_name}-%{version}
+/usr/share/%{real_name}
 
 %files web
-/usr/share/%{name}-web
+/usr/share/%{real_name}-web
 %attr(755,apache,root) /usr/share/vcl-web/.ht-inc/maintenance
 
 %files managementnode
-/usr/share/%{name}-managementnode
+/usr/share/%{real_name}-managementnode
 %config(noreplace) /etc/vcl/vcld.conf
 /etc/init.d/vcld
 
 %changelog
-* Thu Aug 02 2012 curtis@serverascode.com
-- bumping to v2.3...removing the patches, sed hacks, incubating...
-* Mon Jun 25 2012 curtis@serverascode.com
-- comment out VMware::Vix::Simple and VMware::Vix::API::Constants in VIX_API.pm because that library is not provided nor asked for in the official docs. 
-* Fri Jun 22 2012 curtis@serverascode.com
-- initial rpm
+* Mon Aug 13 2012 curtis@serverascode.com
+- added sites
+* Fri Aug 10 2012 curtis@serverascode.com
+- initial rpm based on vcl.spec
