@@ -5,9 +5,9 @@
 
 Name:   vcl-cybera
 %define real_name vcl
-%define cybera_version 0.2
+%define cybera_version 0.4
 Version:        2.3
-Release:        2%{?dist}
+Release:        4%{?dist}
 Summary:        An open-source system used to dynamically provision and broker remote access to a dedicated compute environment for an end-user 
 
 Group:         Applications/System
@@ -71,6 +71,8 @@ Requires: perl-MailTools
 Requires: perl-Net-Jabber
 Requires: perl-RPC-XML
 Requires: perl-YAML
+Requires: perl-Regexp-Common
+Requires: perl-WWW-Curl
 Requires: xmlsec1-openssl
 Requires: perl-Object-InsideOut
 # Only in cybera version
