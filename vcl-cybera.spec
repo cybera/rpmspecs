@@ -5,15 +5,16 @@
 
 Name:   vcl-cybera
 %define real_name vcl
-%define cybera_version 0.4
+%define cybera_version 0.8
 Version:        2.3
-Release:        4%{?dist}
+Release:        9%{?dist}
 Summary:        An open-source system used to dynamically provision and broker remote access to a dedicated compute environment for an end-user 
 
 Group:         Applications/System
 License:       Apache 2.0 
 URL:           https://cwiki.apache.org/VCL 
 #Source0:       apache-VCL-%{version}.tar.bz2
+Source0:	vcl.logrotate
 
 %define git_repo git@github.com:cybera/VCL.git
 
@@ -108,7 +109,9 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/share/%{real_name}
 mkdir -p $RPM_BUILD_ROOT/usr/share/doc/%{real_name}-%{version}
 mkdir -p $RPM_BUILD_ROOT/etc/%{real_name}
+mkdir -p $RPM_BUILD_ROOT/etc/%{real_name}/sites
 mkdir -p $RPM_BUILD_ROOT/etc/init.d
+mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d
 
 # Drop into trunk now
 pushd trunk
@@ -127,6 +130,16 @@ cp -r ./web $RPM_BUILD_ROOT/usr/share/%{real_name}-web
 # Themes is one level up from trunk
 cp -r ../themes/* $RPM_BUILD_ROOT/usr/share/%{real_name}-web/themes/
 cp -r ../sites $RPM_BUILD_ROOT/usr/share/%{real_name}-web/
+ 
+# Create sites in /etc/vcl/sites/$site...
+for site in $(ls $RPM_BUILD_ROOT/usr/share/%{real_name}-web/sites); do
+	mkdir -p $RPM_BUILD_ROOT/etc/%{real_name}/sites/$site
+	if [ -e $RPM_BUILD_ROOT/usr/share/%{real_name}-web/sites/$site/vcl/.ht-inc/conf.php ]; then
+		mv $RPM_BUILD_ROOT/usr/share/%{real_name}-web/sites/$site/vcl/.ht-inc/conf.php $RPM_BUILD_ROOT/etc/%{real_name}/sites/$site
+	fi
+done
+	
+
 cp -r ../utils $RPM_BUILD_ROOT/usr/share/%{real_name}
 cp -r ../image-resources $RPM_BUILD_ROOT/usr/share/%{real_name}
 
@@ -144,6 +157,9 @@ rm -rf ./managementnode/lib/VCL/Module/Provisioning/EC2
 cp -r ./managementnode $RPM_BUILD_ROOT/usr/share/%{real_name}-managementnode
 # remove ec2 code
 
+#logrotate
+cp %{SOURCE0} $RPM_BUILD_ROOT/etc/logrotate.d/vcld
+
 popd #from trunk
 
 %clean
@@ -156,12 +172,14 @@ rm -rf $RPM_BUILD_ROOT
 
 %files web
 /usr/share/%{real_name}-web
+%config(noreplace) /etc/vcl/sites/*/conf.php
 %attr(755,apache,root) /usr/share/vcl-web/.ht-inc/maintenance
 
 %files managementnode
 /usr/share/%{real_name}-managementnode
 %config(noreplace) /etc/vcl/vcld.conf
 /etc/init.d/vcld
+/etc/logrotate.d/vcld
 
 %changelog
 * Mon Aug 13 2012 curtis@serverascode.com
