@@ -5,9 +5,9 @@
 
 Name:   vcl-cybera
 %define real_name vcl
-%define cybera_version 0.8
+%define cybera_version 1.1
 Version:        2.3
-Release:        9%{?dist}
+Release:        12%{?dist}
 Summary:        An open-source system used to dynamically provision and broker remote access to a dedicated compute environment for an end-user 
 
 Group:         Applications/System
@@ -182,6 +182,10 @@ rm -rf $RPM_BUILD_ROOT
 /etc/logrotate.d/vcld
 
 %changelog
+* Tue Dec 17 2012 curtis@serverascode.com
+- added /etc/vcl/sites/*/conf.php and specific site code into $share-web
+* Mon Aug 13 2012 curtis@serverascode.com
+- added sites
 * Mon Aug 13 2012 curtis@serverascode.com
 - added sites
 * Fri Aug 10 2012 curtis@serverascode.com
