@@ -5,9 +5,9 @@
 
 Name:   vcl-cybera
 %define real_name vcl
-%define cybera_version 1.1
+%define cybera_version 1.3
 Version:        2.3
-Release:        12%{?dist}
+Release:        14%{?dist}
 Summary:        An open-source system used to dynamically provision and broker remote access to a dedicated compute environment for an end-user 
 
 Group:         Applications/System
